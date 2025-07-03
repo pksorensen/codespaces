@@ -1,0 +1,79 @@
+{
+  "name": "Claude Code Sandbox",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "args": {
+      "TZ": "${localEnv:TZ:Europe/Copenhagen}",
+    },
+  },
+  "runArgs": ["--cap-add=NET_ADMIN", "--cap-add=NET_RAW"],
+  "forwardPorts": [44303, 57293, 1433, 1025, 8025],
+  "portsAttributes": {
+    "44303": {
+      "label": "HTTPS - SCL Portal",
+      "protocol": "https",
+    },
+    "57293": {
+      "label": "HTTP - SCL Portal",
+      "protocol": "http",
+    },
+    "1433": {
+      "label": "SQL Server",
+      "onAutoForward": "silent",
+    },
+    "1025": {
+      "label": "SMTP (Mailpit)",
+      "onAutoForward": "silent",
+    },
+    "8025": {
+      "label": "Mailpit Web UI",
+      "protocol": "http",
+    },
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "eamodio.gitlens",
+        "github.copilot",
+        "github.copilot-chat",
+        "anthropic.claude-code",
+        "saoudrizwan.claude-dev",
+        "ms-dotnettools.csharp",
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit",
+        },
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "terminal.integrated.profiles.linux": {
+          "bash": {
+            "path": "bash",
+            "icon": "terminal-bash",
+          },
+          "zsh": {
+            "path": "zsh",
+          },
+        },
+      },
+    },
+  },
+  "remoteUser": "root",
+  "mounts": [
+    "source=claude-code-bashhistory,target=/commandhistory,type=volume",
+    "source=claude-code-config,target=/home/node/.claude,type=volume",
+    "source=${localEnv:HOME}${localEnv:USERPROFILE}/.gitconfig,target=/home/node/.gitconfig,type=bind,consistency=cached",
+    "source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh,target=/home/node/.ssh,type=bind,consistency=cached",
+  ],
+  "remoteEnv": {
+    "NODE_OPTIONS": "--max-old-space-size=4096",
+    "CLAUDE_CONFIG_DIR": "/home/node/.claude",
+    "POWERLEVEL9K_DISABLE_GITSTATUS": "true",
+  },
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
+  "workspaceFolder": "/workspace"
+  //"postCreateCommand": "dotnet workload update && dotnet tool restore && dotnet restore && sudo /usr/local/bin/init-firewall.sh",
+}
