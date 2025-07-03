@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+  codespace-api:
+    build: .
+    container_name: codespace-api-prod
+    ports:
+      - "8080:8080"
+    volumes:
+      - /data/codespaces:/data/codespaces
+      - /etc/passwd:/etc/passwd:rw
+      - /etc/shadow:/etc/shadow:rw
+      - /etc/group:/etc/group:rw
+      - /etc/sudoers.d:/etc/sudoers.d:ro
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - ASPNETCORE_LOGGING__LOGLEVEL__DEFAULT=Warning
+    restart: unless-stopped
+    
+    # Security configuration
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:unconfined
+    
+    # Specific capabilities instead of privileged
+    cap_add:
+      - SYS_ADMIN      # Required for user management
+      - DAC_OVERRIDE   # Required for file permission changes
+      - CHOWN          # Required for changing file ownership
+      - SETUID         # Required for user switching
+      - SETGID         # Required for group switching
+    
+    # Drop unnecessary capabilities
+    cap_drop:
+      - NET_RAW
+      - SYS_PTRACE
+      - SYS_MODULE
+      - SYS_RAWIO
+      - SYS_PACCT
+      - SYS_NICE
+      - SYS_RESOURCE
+      - SYS_TIME
+      - SYS_TTY_CONFIG
+      - MKNOD
+      - AUDIT_WRITE
+      - AUDIT_CONTROL
+      - MAC_OVERRIDE
+      - MAC_ADMIN
+      - NET_ADMIN
+      - SYSLOG
+      - DAC_READ_SEARCH
+      - LINUX_IMMUTABLE
+      - NET_BROADCAST
+      - IPC_LOCK
+      - IPC_OWNER
+      - SYS_PTRACE
+      - SYS_BOOT
+      - LEASE
+      - SETFCAP
+      - WAKE_ALARM
+      - BLOCK_SUSPEND
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # Network configuration
+    networks:
+      - codespace-network
+
+# Custom network for better isolation
+networks:
+  codespace-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  codespace-api:
+    build: .
+    container_name: codespace-api
+    ports:
+      - "8080:8080"
+    volumes:
+      - /data/codespaces:/data/codespaces
+      - /etc/passwd:/etc/passwd:ro
+      - /etc/shadow:/etc/shadow:ro
+      - /etc/group:/etc/group:ro
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+    restart: unless-stopped
+    privileged: true
+    # Alternative to privileged - use specific capabilities
+    # cap_add:
+    #   - SYS_ADMIN
+    #   - DAC_OVERRIDE
+    #   - CHOWN
+    #   - SETUID
+    #   - SETGID
